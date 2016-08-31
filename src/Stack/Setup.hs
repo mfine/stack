@@ -66,7 +66,7 @@ import              Network.HTTP.Client.Conduit (HasHttpManager, Manager, getHtt
                                                  responseBody, withResponse)
 import              Network.HTTP.Download.Verified
 import              Path
-import              Path.Extra (toFilePathNoTrailingSep)
+import              Path.Extra (toFilePathNoTrailingSep, toFilePathNoTrailingSep')
 import              Path.IO hiding (findExecutable)
 import qualified    Paths_stack as Meta
 import              Prelude hiding (concat, elem, any) -- Fix AMP warning
@@ -302,7 +302,7 @@ setupEnv mResolveMissingGHC = do
                                         [ toFilePathNoTrailingSep deps
                                         , ""
                                         ])
-                        $ Map.insert "HASKELL_DIST_DIR" (T.pack $ toFilePathNoTrailingSep distDir) env
+                        $ Map.insert "HASKELL_DIST_DIR" (T.pack $ toFilePathNoTrailingSep' distDir) env
 
                     () <- atomicModifyIORef envRef $ \m' ->
                         (Map.insert es eo m', ())

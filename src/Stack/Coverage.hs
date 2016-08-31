@@ -40,7 +40,7 @@ import qualified Data.Text.IO as T
 import qualified Data.Text.Lazy as LT
 import           Data.Traversable (forM)
 import           Path
-import           Path.Extra (toFilePathNoTrailingSep)
+import           Path.Extra (toFilePathNoTrailingSep, toFilePathNoTrailingSep')
 import           Path.IO
 import           Prelude hiding (FilePath, writeFile)
 import           Stack.Build.Source (parseTargetsFromBuildOpts)
@@ -172,7 +172,7 @@ generateHpcReportInternal tixSrc reportDir report extraMarkupArgs extraReportArg
                     -- Use index files from all packages (allows cross-package coverage results).
                     concatMap (\x -> ["--srcdir", toFilePathNoTrailingSep x]) pkgDirs ++
                     -- Look for index files in the correct dir (relative to each pkgdir).
-                    ["--hpcdir", toFilePathNoTrailingSep hpcRelDir, "--reset-hpcdirs"]
+                    ["--hpcdir", toFilePathNoTrailingSep' hpcRelDir, "--reset-hpcdirs"]
             menv <- getMinimalEnvOverride
             $logInfo $ "Generating " <> report
             outputLines <- liftM (map (S8.filter (/= '\r')) . S8.lines) $

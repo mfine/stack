@@ -204,7 +204,7 @@ configFromConfigMonoid
     -> ConfigMonoid
     -> m Config
 configFromConfigMonoid configStackRoot configUserConfigPath mresolver mproject ConfigMonoid{..} = do
-     let configWorkDir = fromFirst $(mkRelDir ".stack-work") configMonoidWorkDir
+     let configWorkDir = Right $ fromFirst $(mkRelDir ".stack-work") configMonoidWorkDir
      -- This code is to handle the deprecation of latest-snapshot-url
      configUrls <- case (getFirst configMonoidLatestSnapshotUrl, getFirst (urlsMonoidLatestSnapshot configMonoidUrls)) of
          (Just url, Nothing) -> do
@@ -388,7 +388,7 @@ loadConfigMaybeProject configArgs mresolver mproject = do
         unless userOwnsStackRoot $
             throwM (UserDoesn'tOwnDirectory stackRoot)
         forM_ mprojectRoot $ \dir ->
-            checkOwnership (dir </> configWorkDir config)
+            checkOwnership (dir <\\> configWorkDir config)
 
     return LoadConfig
         { lcConfig          = config
@@ -554,7 +554,7 @@ resolvePackageLocation menv projRoot (PLRemote url remotePackageType) = do
             RPTHg{} -> T.unwords [url, "hg"]
         -- TODO: dedupe with code for snapshot hash?
         name = T.unpack $ decodeUtf8 $ S.take 12 $ B64URL.encode $ SHA256.hash $ encodeUtf8 nameBeforeHashing
-        root = projRoot </> workDir </> $(mkRelDir "downloaded")
+        root = projRoot <\\> (workDir <//> $(mkRelDir "downloaded"))
         fileExtension = case remotePackageType of
             RPTHttp -> ".http-archive"
             _       -> ".unused"

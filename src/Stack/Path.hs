@@ -108,7 +108,7 @@ data PathInfo = PathInfo
     , piGlobalDb     :: Path Abs Dir
     , piSnapRoot     :: Path Abs Dir
     , piLocalRoot    :: Path Abs Dir
-    , piDistDir      :: Path Rel Dir
+    , piDistDir      :: Either (Path Abs Dir) (Path Rel Dir)
     , piHpcDir       :: Path Abs Dir
     , piExtraDbs     :: [Path Abs Dir]
     , piCompiler     :: Path Abs File
@@ -181,7 +181,7 @@ paths =
       , \pi' -> T.pack (toFilePathNoTrailingSep (piLocalRoot pi' </> docDirSuffix)))
     , ( "Dist work directory"
       , "dist-dir"
-      , T.pack . toFilePathNoTrailingSep . piDistDir )
+      , T.pack . toFilePathNoTrailingSep' . piDistDir )
     , ( "Where HPC reports and tix files are stored"
       , "local-hpc-root"
       , T.pack . toFilePathNoTrailingSep . piHpcDir )

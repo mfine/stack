@@ -4,6 +4,7 @@
 
 module Path.Extra
   (toFilePathNoTrailingSep
+  ,toFilePathNoTrailingSep'
   ,dropRoot
   ,parseCollapsedAbsDir
   ,parseCollapsedAbsFile
@@ -30,6 +31,10 @@ import qualified System.FilePath as FP
 -- | Convert to FilePath but don't add a trailing slash.
 toFilePathNoTrailingSep :: Path loc Dir -> FilePath
 toFilePathNoTrailingSep = FP.dropTrailingPathSeparator . toFilePath
+
+toFilePathNoTrailingSep' :: Either (Path Abs Dir) (Path Rel Dir) -> FilePath
+toFilePathNoTrailingSep' (Left a) = FP.dropTrailingPathSeparator $ toFilePath a
+toFilePathNoTrailingSep' (Right a) = FP.dropTrailingPathSeparator $ toFilePath a
 
 -- | Collapse intermediate "." and ".." directories from path, then parse
 -- it with 'parseAbsDir'.

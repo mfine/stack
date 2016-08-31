@@ -113,7 +113,7 @@ runShellAndExit mprojectRoot getCompilerVersion getCmdArgs = do
                     -- glibcLocales is necessary on Linux to avoid warnings about GHC being incapable to set the locale.
          fullArgs = concat [if pureShell then ["--pure"] else []
                            ,if addGCRoots then ["--indirect", "--add-root"
-                                               ,toFilePath (configWorkDir config)
+                                               ,toFilePath' (configWorkDir config)
                                                 F.</> "nix-gc-symlinks" F.</> "gc-root"] else []
                            ,map T.unpack (nixShellOptions (configNix config))
                            ,nixopts

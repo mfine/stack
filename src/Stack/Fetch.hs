@@ -186,7 +186,7 @@ unpackPackageIdents
     :: (MonadBaseControl IO m, MonadIO m, MonadReader env m, HasHttpManager env, HasConfig env, MonadMask m, MonadLogger m)
     => EnvOverride
     -> Path Abs Dir -- ^ unpack directory
-    -> Maybe (Path Rel Dir) -- ^ the dist rename directory, see: https://github.com/fpco/stack/issues/157
+    -> Maybe (Either (Path Abs Dir) (Path Rel Dir)) -- ^ the dist rename directory, see: https://github.com/fpco/stack/issues/157
     -> Map PackageIdentifier (Maybe GitSHA1)
     -> m (Map PackageIdentifier (Path Abs Dir))
 unpackPackageIdents menv unpackDir mdistDir idents = do
@@ -469,7 +469,7 @@ getToFetch mdest resolvedAll = do
 --
 -- Since 0.1.0.0
 fetchPackages' :: (MonadIO m,MonadReader env m,HasHttpManager env,HasConfig env,MonadLogger m,MonadThrow m,MonadBaseControl IO m)
-               => Maybe (Path Rel Dir) -- ^ the dist rename directory, see: https://github.com/fpco/stack/issues/157
+               => Maybe (Either (Path Abs Dir) (Path Rel Dir)) -- ^ the dist rename directory, see: https://github.com/fpco/stack/issues/157
                -> Map PackageIdentifier ToFetch
                -> m (Map PackageIdentifier (Path Abs Dir))
 fetchPackages' mdistDir toFetchAll = do
@@ -518,7 +518,7 @@ fetchPackages' mdistDir toFetchAll = do
                     Just distDir -> do
                         let inner = parent destDir </> identStrP
                             oldDist = inner </> $(mkRelDir "dist")
-                            newDist = inner </> distDir
+                            newDist = inner <\\> distDir
                         exists <- doesDirExist oldDist
                         when exists $ do
                             -- Previously used takeDirectory, but that got confused

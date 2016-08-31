@@ -64,7 +64,7 @@ import           Distribution.System            (OS (Windows),
 import           Language.Haskell.TH as TH (location)
 import           Network.HTTP.Client.Conduit (HasHttpManager)
 import           Path
-import           Path.Extra (toFilePathNoTrailingSep, rejectMissingFile)
+import           Path.Extra (toFilePathNoTrailingSep, toFilePathNoTrailingSep', rejectMissingFile)
 import           Path.IO hiding (findExecutable, makeAbsolute)
 import           Prelude hiding (FilePath, writeFile, any)
 import           Stack.Build.Cache
@@ -810,7 +810,7 @@ withSingleContext runInBase ActionContext {..} ExecuteEnv {..} task@Task {..} md
         config <- asks getConfig
 
         unless (configAllowDifferentUser config) $
-            checkOwnership (pkgDir </> configWorkDir config)
+            checkOwnership (pkgDir <\\> configWorkDir config)
 
         let envSettings = EnvSettings
                 { esIncludeLocals = taskLocation task == Local
@@ -886,7 +886,7 @@ withSingleContext runInBase ActionContext {..} ExecuteEnv {..} task@Task {..} md
                             : map (("-package-db=" ++) . toFilePathNoTrailingSep) (bcoExtraDBs eeBaseConfigOpts)
                            ++ ["-package-db=" ++ toFilePathNoTrailingSep (bcoSnapDB eeBaseConfigOpts)])
 
-                setupArgs = ("--builddir=" ++ toFilePathNoTrailingSep distRelativeDir') : args
+                setupArgs = ("--builddir=" ++ toFilePathNoTrailingSep' distRelativeDir') : args
                 runExe exeName fullArgs =
                     runAndOutput `catch` \(ProcessExitedUnsuccessfully _ ec) -> do
                         bss <-
@@ -1458,7 +1458,7 @@ extraBuildOptions bopts = do
     let ddumpOpts = " -ddump-hi -ddump-to-file"
     case toCoverage (boptsTestOpts bopts) of
       True -> do
-        hpcIndexDir <- toFilePathNoTrailingSep <$> hpcRelativeDir
+        hpcIndexDir <- toFilePathNoTrailingSep' <$> hpcRelativeDir
         return ["--ghc-options", "-hpcdir " ++ hpcIndexDir ++ ddumpOpts]
       False -> return ["--ghc-options", ddumpOpts]
 

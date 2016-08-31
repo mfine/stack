@@ -123,27 +123,27 @@ hpcDirFromDir
     => Path Abs Dir  -- ^ Package directory.
     -> m (Path Abs Dir)
 hpcDirFromDir fp =
-    liftM (fp </>) hpcRelativeDir
+    liftM (fp <\\>) hpcRelativeDir
 
 -- | Relative location of directory for HPC work.
 hpcRelativeDir :: (MonadThrow m, MonadReader env m, HasEnvConfig env)
-               => m (Path Rel Dir)
+               => m (Either (Path Abs Dir) (Path Rel Dir))
 hpcRelativeDir =
-    liftM (</> $(mkRelDir "hpc")) distRelativeDir
+    liftM (<//> $(mkRelDir "hpc")) distRelativeDir
 
 -- | Package's build artifacts directory.
 distDirFromDir :: (MonadThrow m, MonadReader env m, HasEnvConfig env)
                => Path Abs Dir
                -> m (Path Abs Dir)
 distDirFromDir fp =
-    liftM (fp </>) distRelativeDir
+    liftM (fp <\\>) distRelativeDir
 
 -- | Package's working directory.
 workDirFromDir :: (MonadThrow m, MonadReader env m, HasEnvConfig env)
                => Path Abs Dir
                -> m (Path Abs Dir)
 workDirFromDir fp =
-    liftM (fp </>) getWorkDir
+    liftM (fp <\\>) getWorkDir
 
 -- | Directory for project templates.
 templatesDir :: Config -> Path Abs Dir
@@ -151,7 +151,7 @@ templatesDir config = configStackRoot config </> $(mkRelDir "templates")
 
 -- | Relative location of build artifacts.
 distRelativeDir :: (MonadThrow m, MonadReader env m, HasEnvConfig env)
-                => m (Path Rel Dir)
+                => m (Either (Path Abs Dir) (Path Rel Dir))
 distRelativeDir = do
     cabalPkgVer <- asks (envConfigCabalVersion . getEnvConfig)
     platform <- platformGhcRelDir
@@ -165,8 +165,8 @@ distRelativeDir = do
     platformAndCabal <- useShaPathOnWindows (platform </> envDir)
     workDir <- getWorkDir
     return $
-        workDir </>
-        $(mkRelDir "dist") </>
+        workDir <//>
+        $(mkRelDir "dist") <//>
         platformAndCabal
 
 -- | Docker sandbox from project root.
@@ -175,7 +175,7 @@ projectDockerSandboxDir :: (MonadReader env m, HasConfig env)
   -> m (Path Abs Dir)  -- ^ Docker sandbox
 projectDockerSandboxDir projectRoot = do
   workDir <- getWorkDir
-  return $ projectRoot </> workDir </> $(mkRelDir "docker/")
+  return $ projectRoot <\\> workDir </> $(mkRelDir "docker/")
 
 -- | Image staging dir from project root.
 imageStagingDir :: (MonadReader env m, HasConfig env, MonadThrow m)
@@ -185,7 +185,7 @@ imageStagingDir :: (MonadReader env m, HasConfig env, MonadThrow m)
 imageStagingDir projectRoot imageIdx = do
   workDir <- getWorkDir
   idxRelDir <- parseRelDir (show imageIdx)
-  return $ projectRoot </> workDir </> $(mkRelDir "image") </> idxRelDir
+  return $ projectRoot <\\> workDir </> $(mkRelDir "image") </> idxRelDir
 
 -- | Name of the 'stack' program, uppercased
 stackProgNameUpper :: String

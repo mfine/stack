@@ -135,6 +135,9 @@ module Stack.Types.Config
   ,platformGhcRelDir
   ,useShaPathOnWindows
   ,getWorkDir
+  ,(<//>)
+  ,(<\\>)
+  ,toFilePath'
   -- * Command-specific types
   -- ** Eval
   ,EvalOpts(..)
@@ -218,11 +221,23 @@ import qualified Crypto.Hash.SHA1 as SHA1
 import qualified Data.ByteString.Base16 as B16
 #endif
 
+(<//>) :: Either (Path Abs Dir) (Path Rel Dir) -> Path Rel Dir -> Either (Path Abs Dir) (Path Rel Dir)
+(<//>) (Left a) b = Left (a </> b)
+(<//>) (Right a) b = Right (a </> b)
+
+(<\\>) :: Path Abs Dir -> Either (Path Abs Dir) (Path Rel Dir) -> Path Abs Dir
+(<\\>) _a (Left b) = b
+(<\\>) a (Right b) = a </> b
+
+toFilePath' :: Either (Path Abs Dir) (Path Rel Dir) -> FilePath
+toFilePath' (Left a) = toFilePath a
+toFilePath' (Right a) = toFilePath a
+
 -- | The top-level Stackage configuration.
 data Config =
   Config {configStackRoot           :: !(Path Abs Dir)
          -- ^ ~/.stack more often than not
-         ,configWorkDir             :: !(Path Rel Dir)
+         ,configWorkDir             :: !(Either (Path Abs Dir) (Path Rel Dir))
          -- ^ this allows to override .stack-work directory
          ,configUserConfigPath      :: !(Path Abs File)
          -- ^ Path to user configuration file (usually ~/.stack/config.yaml)
@@ -469,7 +484,7 @@ bcRoot = parent . bcStackYaml
 bcWorkDir :: (MonadReader env m, HasConfig env) => BuildConfig -> m (Path Abs Dir)
 bcWorkDir bconfig = do
   workDir <- getWorkDir
-  return (bcRoot bconfig </> workDir)
+  return (bcRoot bconfig <\\> workDir)
 
 bcWantedCompiler :: BuildConfig -> CompilerVersion
 bcWantedCompiler = mbpCompilerVersion . bcWantedMiniBuildPlan
@@ -1214,7 +1229,7 @@ configPackageTarball iname ident = do
     return (root </> $(mkRelDir "packages") </> name </> ver </> base)
 
 -- | @".stack-work"@
-getWorkDir :: (MonadReader env m, HasConfig env) => m (Path Rel Dir)
+getWorkDir :: (MonadReader env m, HasConfig env) => m (Either (Path Abs Dir) (Path Rel Dir))
 getWorkDir = configWorkDir `liftM` asks getConfig
 
 -- | Per-project work dir
@@ -1222,7 +1237,7 @@ getProjectWorkDir :: (HasBuildConfig env, MonadReader env m) => m (Path Abs Dir)
 getProjectWorkDir = do
     bc      <- asks getBuildConfig
     workDir <- getWorkDir
-    return (bcRoot bc </> workDir)
+    return (bcRoot bc <\\> workDir)
 
 -- | File containing the installed cache, see "Stack.PackageDump"
 configInstalledCache :: (HasBuildConfig env, MonadReader env m) => m (Path Abs File)
