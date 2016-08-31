@@ -776,7 +776,7 @@ data ConfigMonoid =
   ConfigMonoid
     { configMonoidStackRoot          :: !(First (Path Abs Dir))
     -- ^ See: 'configStackRoot'
-    , configMonoidWorkDir            :: !(First (Path Rel Dir))
+    , configMonoidWorkDir            :: !(First (Path Abs Dir))
     -- ^ See: 'configWorkDir'.
     , configMonoidBuildOpts          :: !BuildOptsMonoid
     -- ^ build options.

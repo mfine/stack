@@ -240,7 +240,7 @@ configOptsParser hide0 =
                      "(Overrides any STACK_ROOT environment variable)")
             <> hide
             ))
-    <*> optionalFirst (relDirOption
+    <*> optionalFirst (absDirOption
             ( long "work-dir"
             <> metavar "WORK-DIR"
             <> help "Override work directory (default: .stack-work)"
