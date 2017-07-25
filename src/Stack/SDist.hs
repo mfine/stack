@@ -142,13 +142,13 @@ getSDistTarball mpvpBounds pkgDir = do
             -- This is a cabal file, we're going to tweak it, but only
             -- tweak it as a revision.
             | tweakCabal && isCabalFp fp && asRevision = do
-                lbsIdent <- getCabalLbs pvpBounds (Just 1) $ toFilePath cabalfp
+                lbsIdent <- getCabalLbs pvpBounds (Just 1) cabalfp
                 liftIO (writeIORef cabalFileRevisionRef (Just lbsIdent))
                 packWith packFileEntry False fp
             -- Same, except we'll include the cabal file in the
             -- original tarball upload.
             | tweakCabal && isCabalFp fp = do
-                (_ident, lbs) <- getCabalLbs pvpBounds Nothing $ toFilePath cabalfp
+                (_ident, lbs) <- getCabalLbs pvpBounds Nothing cabalfp
                 currTime <- liftIO getPOSIXTime -- Seconds from UNIX epoch
                 tp <- liftIO $ tarPath False fp
                 return $ (Tar.fileEntry tp lbs) { Tar.entryTime = floor currTime }
@@ -165,10 +165,10 @@ getSDistTarball mpvpBounds pkgDir = do
 getCabalLbs :: HasEnvConfig env
             => PvpBoundsType
             -> Maybe Int -- ^ optional revision
-            -> FilePath
+            -> Path Abs File
             -> RIO env (PackageIdentifier, L.ByteString)
 getCabalLbs pvpBounds mrev fp = do
-    bs <- liftIO $ S.readFile fp
+    bs <- liftIO $ S.readFile $ toFilePath fp
     (_warnings, gpd) <- readPackageUnresolvedBS Nothing bs
     (_, sourceMap) <- loadSourceMap AllowNoTargets defaultBuildOptsCLI
     menv <- getMinimalEnvOverride
@@ -178,7 +178,8 @@ getCabalLbs pvpBounds mrev fp = do
                                 , getInstalledSymbols = False
                                 }
                                 sourceMap
-    let gpd' = gtraverseT (addBounds sourceMap installedMap) gpd
+    name <- parsePackageNameFromFilePath fp
+    let gpd' = gtraverseT (addBounds sourceMap installedMap name) gpd
         gpd'' =
           case mrev of
             Nothing -> gpd'
@@ -198,13 +199,13 @@ getCabalLbs pvpBounds mrev fp = do
       , TLE.encodeUtf8 $ TL.pack $ showGenericPackageDescription gpd''
       )
   where
-    addBounds :: SourceMap -> InstalledMap -> Dependency -> Dependency
-    addBounds sourceMap installedMap dep@(Dependency cname range) =
+    addBounds :: SourceMap -> InstalledMap -> PackageName -> Dependency -> Dependency
+    addBounds sourceMap installedMap name dep@(Dependency cname range) =
       case lookupVersion (fromCabalPackageName cname) of
         Nothing -> dep
         Just version -> Dependency cname $ simplifyVersionRange
-          $ (if toAddUpper && not (hasUpperBound range) then addUpper version else id)
-          $ (if toAddLower && not (hasLowerBound range) then addLower version else id)
+          $ (if toAddUpper && not (hasUpperBound range) && show cname /= show name then addUpper version else id)
+          $ (if toAddLower && not (hasLowerBound range) && show cname /= show name then addLower version else id)
             range
       where
         lookupVersion name =
